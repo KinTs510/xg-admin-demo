@@ -24,9 +24,9 @@ const randHex = (n) => Array.from({ length: n }, () => '0123456789abcdef'[Math.f
 const shortHash = (h) => (h && h.length > 14 ? h.slice(0, 6) + '…' + h.slice(-6) : h || '---');
 const val = (id) => { const el = document.getElementById(id); return el ? (el.type === 'checkbox' ? el.checked : el.value.trim()) : ''; };
 
-/* icons — vendored lucide-static SVGs, drawn as CSS masks so they inherit colour */
+/* Inline SVG (not CSS masks): masks loaded by url() are blocked when the page is opened from disk (file://). */
 const ic = (name, size = 16, style = '') =>
-  `<i class="ic" aria-hidden="true" style="-webkit-mask-image:url('assets/icons/${name}.svg');mask-image:url('assets/icons/${name}.svg');width:${size}px;height:${size}px;${style}"></i>`;
+  `<svg class="ic" aria-hidden="true" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="width:${size}px;height:${size}px;${style}">${ICONS[name] || ''}</svg>`;
 
 /* ------------------------------------------------------------------ store */
 const Store = {

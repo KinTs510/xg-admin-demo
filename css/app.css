@@ -46,10 +46,8 @@ a:hover { text-decoration: underline; }
 .lnk { color: var(--p); text-decoration: underline; }
 .hidden { display: none !important; }
 
-/* ---------- Icons (Lucide, vendored, drawn as masks so they take currentColor) ---------- */
-.ic { display: inline-block; flex: none; width: 16px; height: 16px; background: currentColor;
-  -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain;
-  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+/* ---------- Icons (inline SVG from js/icons.js; stroke uses currentColor) ---------- */
+.ic { display: inline-block; flex: none; width: 16px; height: 16px; vertical-align: middle; overflow: visible; }
 
 /* ---------- Buttons ---------- */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: 6px;

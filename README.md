@@ -68,6 +68,7 @@ Mint and burn always go through Approvals, then Transaction Requests.
 ```
 index.html          entry page
 css/app.css         design tokens and components (v2.3.1: violet #7C3AED + neutral greys, Roboto)
+js/icons.js         inline SVG icon shapes
 js/core.js          store, hash router, toasts, modals, security key + approval write pattern, UI helpers
 js/data.js          demo accounts and seed data
 js/auth.js          01–03 sign in, second factor, password recovery
@@ -89,5 +90,6 @@ assets/             logo, mark, metamask icon, vendored Lucide icons (+ two cust
 - The supply-fee formula shown in Settings is inferred from the design's sample numbers. Confirm it with the backend.
 - List status icons follow the v2.3.1 design: Done / Not done / Rejected only. Steps waiting for approval show as
   Not done in lists; the detail page shows the yellow *Waiting for approvals* banner.
-- Icons are from [Lucide](https://lucide.dev) (ISC licence), vendored in `assets/icons`; `gzstack` and `gzbars` are
-  the design's own nav icons. Fonts load from Google Fonts.
+- Icons are from [Lucide](https://lucide.dev) (ISC licence); `gzstack` and `gzbars` are the design's own nav icons.
+  The source SVGs are in `assets/icons` and are inlined into the page from `js/icons.js`, so they also show when
+  `index.html` is opened straight from disk. Fonts load from Google Fonts.
