@@ -9,7 +9,7 @@ const pendingChip = (key) => (ST().pending[key] ? pill('Change pending approval'
 const editBtns = (key) => {
   if (ST().pending[key]) return pendingChip(key);
   return UI.edit[key] ? `<div style="display:flex;gap:8px"><button class="btn sec sm" onclick="UI.edit['${key}']=false;UI.errs={};refresh()">Cancel</button><button class="btn pri sm" onclick="saveCard('${key}')">Save</button></div>`
-    : `<button class="btn sec sm" onclick="UI.edit['${key}']=true;refresh()">${ic('pencil', 13)}Edit</button>`;
+    : `<button class="rowmenu" data-menu title="More" onclick="rowMenu(this,[{label:'Edit',icon:'pencil',run:()=>{UI.edit['${key}']=true;refresh();}}])">${ic('ellipsis-vertical', 20)}</button>`;
 };
 UI.errs = UI.errs || {};
 function listPendingRows(list) {
@@ -41,7 +41,7 @@ route('/settings/general', {
   render: () => {
     const tab = UI.genTab || 'pay';
     return `${pageHead('General Settings', 'Payment details, gold brands and blocked dates')}
-      ${tabs('genTab', [['pay', 'Payment'], ['brand', 'Gold Brand'], ['blocked', 'Blocked Dates']])}
+      ${tabs('genTab', [['pay', 'Payment'], ['brand', 'Gold Brand'], ['blocked', 'Blocked Dates']], 'refresh()', 'line')}
       ${tab === 'pay' ? paymentTab() : tab === 'brand' ? brandTab() : blockedTab()}`;
   },
 });
@@ -124,7 +124,7 @@ function brandTab() {
     ${pend.length ? banner('warn', `${pend.length} brand change(s) waiting for approval`, 'The list below shows the live values until each change is approved in Approvals.') : ''}
     ${table(['No.', 'Name of Brand', 'Country of Origin', 'Refinery Address', ''], ST().brands.map((b, i) => [mono(i + 1), `<b>${esc(b.name)}</b> ${pendingChip('brands:' + b.id)}`, esc(b.country), esc(b.address),
       ST().pending['brands:' + b.id] ? '' : `<button class="rowmenu" data-menu onclick="rowMenu(this,[{label:'Edit',icon:'pencil',run:()=>brandModal(${b.id})},{label:'Delete',icon:'trash-2',danger:true,run:()=>deleteItem('brands',${b.id},'Delete GoldBrand')}])">${ic('ellipsis-vertical', 16)}</button>`]),
-    { align: ['', '', '', '', 'r'] })}<div class="hint">Used by the Brand dropdown in Redemption → Vault Management and the supply bar lists.</div>`;
+    { noAction: true, align: ['', '', '', '', 'r'] })}<div class="hint">Used by the Brand dropdown in Redemption → Vault Management and the supply bar lists.</div>`;
 }
 function brandModal(id, errs = {}, vals) {
   const b = vals || (id ? ST().brands.find((x) => x.id === id) : { name: '', country: '', address: '' });
@@ -213,13 +213,13 @@ route('/settings/deposit', {
     const s = ST();
     const pend = listPendingRows(tab === 'loc' ? 'depositLocations' : 'methods');
     return `${pageHead('Deposit Settings', 'Where and how suppliers deliver gold', `<button class="btn pri" data-menu onclick="popMenu(this,[{label:'New Location',icon:'map-pin',run:()=>go('/settings/deposit/location/new')},{label:'New Method',icon:'truck',run:()=>methodModal()}],{alignRight:true})">${ic('plus', 15)}Create New${ic('chevron-down', 14)}</button>`)}
-      ${tabs('depTab', [['loc', 'Location'], ['method', 'Method']])}
+      ${tabs('depTab', [['loc', 'Location'], ['method', 'Method']], 'refresh()', 'line')}
       ${pend.length ? banner('warn', `${pend.length} change(s) waiting for approval`, 'Live values are shown until each change is approved.') : ''}
       ${tab === 'loc'
     ? table(['No.', 'Location Name', 'Address', 'Country', 'Method', ''], s.depositLocations.map((l, i) => [mono(i + 1), `<b>${esc(l.name)}</b> ${pendingChip('depositLocations:' + l.id)}`, esc(`${l.street}, ${l.city}`), esc(l.country), esc(l.methods.join(', ')),
-      s.pending['depositLocations:' + l.id] ? '' : `<button class="rowmenu" data-menu onclick="rowMenu(this,[{label:'Details',icon:'eye',run:()=>go('/settings/deposit/location/${l.id}?view=1')},{label:'Edit',icon:'pencil',run:()=>go('/settings/deposit/location/${l.id}')},{label:'Delete',icon:'trash-2',danger:true,run:()=>deleteItem('depositLocations',${l.id},'Delete Location')}])">${ic('ellipsis-vertical', 16)}</button>`]), { align: ['', '', '', '', '', 'r'] })
+      s.pending['depositLocations:' + l.id] ? '' : `<button class="rowmenu" data-menu onclick="rowMenu(this,[{label:'Details',icon:'eye',run:()=>go('/settings/deposit/location/${l.id}?view=1')},{label:'Edit',icon:'pencil',run:()=>go('/settings/deposit/location/${l.id}')},{label:'Delete',icon:'trash-2',danger:true,run:()=>deleteItem('depositLocations',${l.id},'Delete Location')}])">${ic('ellipsis-vertical', 16)}</button>`]), { noAction: true, align: ['', '', '', '', '', 'r'] })
     : table(['No.', 'Method', ''], s.methods.map((m, i) => [mono(i + 1), `<b>${esc(m.name)}</b> ${pendingChip('methods:' + m.id)}`,
-      s.pending['methods:' + m.id] ? '' : `<button class="rowmenu" data-menu onclick="rowMenu(this,[{label:'Edit',icon:'pencil',run:()=>methodModal(${m.id})},{label:'Delete',icon:'trash-2',danger:true,run:()=>deleteItem('methods',${m.id},'Delete Method')}])">${ic('ellipsis-vertical', 16)}</button>`]), { align: ['', '', 'r'] })}
+      s.pending['methods:' + m.id] ? '' : `<button class="rowmenu" data-menu onclick="rowMenu(this,[{label:'Edit',icon:'pencil',run:()=>methodModal(${m.id})},{label:'Delete',icon:'trash-2',danger:true,run:()=>deleteItem('methods',${m.id},'Delete Method')}])">${ic('ellipsis-vertical', 16)}</button>`]), { noAction: true, align: ['', '', 'r'] })}
       <div class="hint">Suppliers pick a location and method when they create a supply order. That choice feeds “Gold Drop-Off Logistics” in Supply Management.</div>`;
   },
 });
@@ -291,16 +291,16 @@ route('/settings/redemption', {
     } else if (tab === 'loc') {
       body = table(['No.', 'Location Name', 'Address', 'Country', 'Lead Days', 'Collection Date', ''], s.redemptionLocations.map((l, i) => [mono(i + 1), `<b>${esc(l.name)}</b> ${pendingChip('redemptionLocations:' + l.id)}`, esc(`${l.street}, ${l.city}`), esc(l.country), mono('T+' + l.lead),
         l.picked.length ? `<div class="two mono"><b>${esc(l.picked[0])}</b>${l.picked.length > 1 ? `<small>+${l.picked.length - 1} more</small>` : ''}</div>` : '<span class="muted">—</span>',
-        s.pending['redemptionLocations:' + l.id] ? '' : `<button class="rowmenu" data-menu onclick="rowMenu(this,[{label:'Edit',icon:'pencil',run:()=>go('/settings/redemption/location/${l.id}')},{label:'Delete',icon:'trash-2',danger:true,run:()=>deleteItem('redemptionLocations',${l.id},'Delete Location')}])">${ic('ellipsis-vertical', 16)}</button>`]), { align: ['', '', '', '', '', '', 'r'] })
+        s.pending['redemptionLocations:' + l.id] ? '' : `<button class="rowmenu" data-menu onclick="rowMenu(this,[{label:'Edit',icon:'pencil',run:()=>go('/settings/redemption/location/${l.id}')},{label:'Delete',icon:'trash-2',danger:true,run:()=>deleteItem('redemptionLocations',${l.id},'Delete Location')}])">${ic('ellipsis-vertical', 16)}</button>`]), { noAction: true, align: ['', '', '', '', '', '', 'r'] })
         + `<div class="hint">Lead Days (T+N): the earliest collection date a client can pick is N working days after the order is created. This applies on top of the location's Blocked Dates. Collection Date shows the next date a client picked under Redemption.</div>`;
     } else {
       body = table(['No.', 'Type', 'Name', 'Weight(g)', ''], s.productTypes.map((p, i) => [mono(i + 1), pill(p.type, p.type === 'Bar' ? 'gold' : 'info'), `<b>${esc(p.name)}</b> ${pendingChip('productTypes:' + p.id)}`, mono(Number(p.weight).toLocaleString('en-US', { maximumFractionDigits: 4 })),
-        s.pending['productTypes:' + p.id] ? '' : `<button class="rowmenu" data-menu onclick="rowMenu(this,[{label:'Edit',icon:'pencil',run:()=>go('/settings/redemption/product/${p.id}')},{label:'Delete',icon:'trash-2',danger:true,run:()=>deleteItem('productTypes',${p.id},'Delete Product Type')}])">${ic('ellipsis-vertical', 16)}</button>`]), { align: ['', '', '', '', 'r'] })
+        s.pending['productTypes:' + p.id] ? '' : `<button class="rowmenu" data-menu onclick="rowMenu(this,[{label:'Edit',icon:'pencil',run:()=>go('/settings/redemption/product/${p.id}')},{label:'Delete',icon:'trash-2',danger:true,run:()=>deleteItem('productTypes',${p.id},'Delete Product Type')}])">${ic('ellipsis-vertical', 16)}</button>`]), { noAction: true, align: ['', '', '', '', 'r'] })
         + `<div class="hint">Clients choose from these product types when they create a redemption order.</div>`;
     }
     const pend = tab === 'loc' ? listPendingRows('redemptionLocations') : tab === 'prod' ? listPendingRows('productTypes') : [];
     return `${pageHead('Redemption Settings', 'Escrow wallets, pick-up locations and product types', create)}
-      ${tabs('rsTab', [['escrow', 'Escrow Settings'], ['loc', 'Redemption Location'], ['prod', 'Product Type']])}
+      ${tabs('rsTab', [['escrow', 'Escrow Settings'], ['loc', 'Redemption Location'], ['prod', 'Product Type']], 'refresh()', 'line')}
       ${pend.length ? banner('warn', `${pend.length} change(s) waiting for approval`, 'Live values are shown until each change is approved.') : ''}${body}`;
   },
 });

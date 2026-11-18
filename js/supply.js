@@ -79,7 +79,8 @@ function soFilterBar(key, processes) {
 function soFilter(key, list, steps) {
   const f = UI[key] || {};
   if (!f.status) return list;
-  return list.filter((o) => (f.proc !== '' && f.proc != null ? soStep(o, steps[+f.proc]) === f.status : steps.some((s) => soStep(o, s) === f.status)));
+  const is = (o, s) => stKey(soStep(o, s)) === f.status;
+  return list.filter((o) => (f.proc !== '' && f.proc != null ? is(o, steps[+f.proc]) : steps.some((s) => is(o, s))));
 }
 const soRowHead = ['Applied Date', 'Reference ID', 'Client Ref. ID', 'Business Name', 'Supplier Name'];
 const soRowCells = (o) => [mono(o.applied), mono(o.id), mono(o.cref), esc(coInfo(o).business), esc(coInfo(o).contact)];

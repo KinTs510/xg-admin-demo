@@ -1,7 +1,8 @@
 # xg-admin-demo
 
 A static, clickable demo of the **GoldZip Admin Portal** (back office), built from the design file
-`GoldZip Admin Portal - UI` (v2.3.x) and the developer guide `GoldZip-Admin-Portal-Flows.md`.
+`GoldZip Admin Portal - UI` (v2.3.1 restyle: violet + neutral, Roboto) and the developer guide
+`GoldZip-Admin-Portal-Flows.md`.
 
 It is plain HTML, CSS and JavaScript. There is no build step and no backend: data lives in your
 browser's `localStorage`, so you can click through every flow, change data, and reset it.
@@ -66,7 +67,7 @@ Mint and burn always go through Approvals, then Transaction Requests.
 
 ```
 index.html          entry page
-css/app.css         design tokens and components (Manrope + IBM Plex Mono, gold/ink palette)
+css/app.css         design tokens and components (v2.3.1: violet #7C3AED + neutral greys, Roboto)
 js/core.js          store, hash router, toasts, modals, security key + approval write pattern, UI helpers
 js/data.js          demo accounts and seed data
 js/auth.js          01–03 sign in, second factor, password recovery
@@ -77,7 +78,7 @@ js/supply.js        06 Supply Management
 js/redemption.js    07 Redemption
 js/settings.js      08 Settings
 js/app.js           boot
-assets/             logo, mark, splash image, vendored Lucide icons
+assets/             logo, mark, metamask icon, vendored Lucide icons (+ two custom nav icons)
 ```
 
 ## Notes
@@ -86,4 +87,7 @@ assets/             logo, mark, splash image, vendored Lucide icons
 - Routes other than `/login`, `/forgot-password`, `/reset-password` and `/dashboard` are this demo's own
   choice; the design does not define them (open point 5).
 - The supply-fee formula shown in Settings is inferred from the design's sample numbers. Confirm it with the backend.
-- Icons are from [Lucide](https://lucide.dev) (ISC licence), vendored in `assets/icons`. Fonts load from Google Fonts.
+- List status icons follow the v2.3.1 design: Done / Not done / Rejected only. Steps waiting for approval show as
+  Not done in lists; the detail page shows the yellow *Waiting for approvals* banner.
+- Icons are from [Lucide](https://lucide.dev) (ISC licence), vendored in `assets/icons`; `gzstack` and `gzbars` are
+  the design's own nav icons. Fonts load from Google Fonts.

@@ -9,15 +9,16 @@ const NAV = () => {
   const so = (stages, f = notPending) => d.supply.filter((x) => stages.includes(x.stage) && f(x)).length;
   const ro = (stages, f = notPending) => d.redemption.filter((x) => stages.includes(x.stage) && f(x)).length;
   return [
-    { key: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard', path: '/dashboard' },
-    { key: 'onboarding', label: 'Client Onboarding', icon: 'user-check', subs: [
+    { key: 'dashboard', label: 'Dashboard', icon: 'house', path: '/dashboard' },
+    { key: 'approvals', label: 'Approvals', icon: 'square-check', path: '/approvals', count: d.approvals.filter((a) => a.status === 'pending').length },
+    { key: 'onboarding', label: 'Client Onboarding', icon: 'gzstack', subs: [
       ['Incoming Request', '/onboarding/incoming', c('incoming', notPending)],
       ['KYC/KYB Verification', '/onboarding/verification', c('verification', (x) => x.reportStatus === 'none' && !x.pending)],
       ['Verfication Decision', '/onboarding/decision', c('decision', (x) => x.reportStatus === 'done' && !x.pending)],
       ['History', '/onboarding/history'],
       ['Registered Users', '/onboarding/users'],
     ] },
-    { key: 'supply', label: 'Supply Management', icon: 'vault', subs: [
+    { key: 'supply', label: 'Supply Management', icon: 'gzstack', subs: [
       ['Order List', '/supply/orders', so(['countersign'], (x) => !x.pending && x.fee.valid) + d.supply.filter((x) => x.stage === 'rejected' && !x.refund).length],
       ['Vault Management', '/supply/vault', so(['vault'])],
       ['Assay Management', '/supply/assay', so(['testing', 'result'])],
@@ -25,14 +26,13 @@ const NAV = () => {
       ['Minting', '/supply/minting', so(['issue', 'issuing'])],
       ['History', '/supply/history'],
     ] },
-    { key: 'redemption', label: 'Redemption', icon: 'hand-coins', subs: [
+    { key: 'redemption', label: 'Redemption', icon: 'refresh-cw', subs: [
       ['Order List', '/redemption/orders', d.demo.redemptionFlow === 'v1' ? ro(['deposit']) : 0],
       ['Vault Management', '/redemption/vault', ro(['vault'])],
       ['Vault Approval', '/redemption/approval', ro(['approval'])],
       ['Escrow', '/redemption/escrow', d.redemption.filter((x) => x.stage === 'escrow' && ['cancelreq', 'collect', 'confirm'].includes(x.phase) && !x.pending).length],
       ['History', '/redemption/history', d.redemption.filter((x) => x.stage === 'history' && ['NotStarted', 'ApprovalSuccess'].includes(x.burn)).length],
     ] },
-    { key: 'approvals', label: 'Approvals', icon: 'badge-check', path: '/approvals', count: d.approvals.filter((a) => a.status === 'pending').length },
     { key: 'tx', label: 'Transaction Requests', icon: 'arrow-left-right', path: '/transactions', count: d.txRequests.filter((t) => t.status === 'pending').length },
     { key: 'settings', label: 'Settings', icon: 'settings', subs: [
       ['General', '/settings/general'], ['Deposit', '/settings/deposit'], ['Redemption', '/settings/redemption'],
@@ -46,38 +46,39 @@ const Shell = {
     const u = me();
     const group = r.def.group, item = r.def.item;
     const nav = NAV();
+    // design v2.3.1: every group is expanded; the active sub-page is violet with a violet left rule
     const sideNav = nav.map((g) => {
       const on = g.key === group;
-      const open = g.subs && (UI.navOpen[g.key] ?? on);
-      const count = g.count ? `<span class="chip" style="margin-left:auto">${g.count}</span>` : '';
-      if (!g.subs) return `<a class="top ${on ? 'on cur' : ''}" href="#${g.path}">${ic(g.icon, 19)}<span>${g.label}</span>${count}</a>`;
-      return `<a class="top ${on ? 'on' : ''}" onclick="UI.navOpen['${g.key}']=${!open};refresh()">${ic(g.icon, 19)}<span>${g.label}</span>${ic(open ? 'chevron-up' : 'chevron-down', 14, 'margin-left:auto;opacity:.45')}</a>
-        ${open ? `<div class="subs">${g.subs.map(([t, p, n]) => `<a class="${on && item === t ? 'on' : ''}" href="#${p}">${t}${n ? `<span class="chip">${n}</span>` : ''}</a>`).join('')}</div>` : ''}`;
+      const count = g.count ? `<span class="chip">${g.count}</span>` : '';
+      if (!g.subs) return `<a class="top ${on ? 'cur' : ''}" href="#${g.path}">${ic(g.icon, 22)}<span style="flex:1">${g.label}</span>${count}</a>`;
+      return `<a class="top" href="#${g.subs[0][1]}">${ic(g.icon, 22)}<span style="flex:1">${g.label}</span></a>
+        <div class="subs">${g.subs.map(([t, p, n]) => `<a class="${on && item === t ? 'on' : ''}" href="#${p}">${t}${n ? `<span class="chip">${n}</span>` : ''}</a>`).join('')}</div>`;
     }).join('');
-    const railOn = r.def.rail || (group === 'dashboard' || group === 'approvals' || group === 'tx' ? 'data' : group === 'profile' ? 'account' : 'ops');
+    const railOn = r.def.rail || (group === 'profile' ? 'account' : group === 'dashboard' ? 'data' : 'ops');
     const groupLabel = (nav.find((g) => g.key === group) || {}).label;
     const crumb = r.def.crumb || (item ? [groupLabel, item] : [r.def.title]);
     const d = S();
+    const ETH = '<svg width="14" height="20" viewBox="0 0 14 22" style="display:block;flex:none"><path d="M7 0L0 11.2 7 15.3 14 11.2z" fill="#212121"/><path d="M7 16.6L0 12.5 7 22 14 12.5z" fill="#3a3a3a"/></svg>';
     return `<div class="shell">
       <nav class="rail" aria-label="Sections">
         <div class="mark"><img src="assets/goldzip-mark.png" alt="GoldZip"></div>
-        <button class="${railOn === 'account' ? 'on' : ''}" title="Account" onclick="go('/profile')">${ic('user-round', 20)}</button>
-        <button class="${railOn === 'data' ? 'on' : ''}" title="Data" onclick="go('/dashboard')">${ic('database', 20)}</button>
-        <button class="${railOn === 'ops' ? 'on' : ''}" title="Operations" onclick="go('/supply/orders')">${ic('vault', 20)}</button>
+        <button class="${railOn === 'account' ? 'on' : ''}" title="Account" onclick="go('/profile')">${ic('circle-user-round', 26)}</button>
+        <button class="${railOn === 'data' ? 'on' : ''}" title="Data" onclick="go('/dashboard')">${ic('gzstack', 26)}</button>
+        <button class="${railOn === 'ops' ? 'on' : ''}" title="Operations" onclick="go('/supply/orders')">${ic('gzbars', 26)}</button>
       </nav>
       <aside class="side">
-        <div class="who"><span class="n">${esc(u.name)} · ${esc(u.title)}</span><span class="e">${esc(u.email)}</span>
-          <div class="roles">${u.roles.filter((x) => x !== u.title || x === 'SuperAdmin').map((x) => `<span class="role">${esc(x)}</span>`).join('')}</div></div>
+        <div class="who"><span class="n">${esc(u.business ? u.business.replace(/^Corporate · /, '') : 'Company Name')}</span><span class="e">${esc(u.email)}</span>
+          <div class="roles">${u.roles.map((x) => `<span class="role">${esc(x)}</span>`).join('')}</div></div>
         <div class="nav">${sideNav}</div>
-        <div class="ver">Version ${VERSION}</div>
+        <div class="ver">© All Rights Reserved. ABT Tech Limited. Version ${VERSION}</div>
       </aside>
       <div class="main">
         <header class="topbar">
-          <div class="crumb">${crumb.map((c, i) => (i === crumb.length - 1 && crumb.length > 1 ? `<b>${esc(c)}</b>` : `<span>${esc(c)}</span>`)).join('<span>/</span>')}</div>
+          <div class="crumb">${crumb.length > 1 ? crumb.map((c, i) => (i === crumb.length - 1 ? `<b>${esc(c)}</b>` : `<span>${esc(c)}</span>`)).join('<span>/</span>') : ''}</div>
           <div class="tb-right">
-            <button class="net" data-menu onclick="netMenu(this)">${ic('gem', 16)}${esc(d.demo.network)}${ic('chevron-down', 14)}</button>
-            ${d.demo.wallet ? `<button class="wallet-on" onclick="walletMenu(this)" data-menu>${ic('wallet', 14)}${esc(d.demo.wallet)}</button>` : `<button class="btn pri" style="padding:11px 16px;font-size:13px" onclick="connectWallet()">Connect Wallet</button>`}
-            <div class="avatar" data-menu onclick="toggleAccount(event)" title="Account">${esc(u.initials)}</div>
+            <button class="net" data-menu onclick="netMenu(this)">${ETH}${esc(d.demo.network)}${ic('chevron-down', 18)}</button>
+            ${d.demo.wallet ? `<button class="wallet-on" onclick="walletMenu(this)" data-menu>${ic('wallet', 15)}${esc(d.demo.wallet)}</button>` : `<button class="btn pri" onclick="connectWallet()">Connect Wallet</button>`}
+            <button class="usr" data-menu onclick="toggleAccount(event)" title="Account">${ic('circle-user-round', 28)}</button>
           </div>
         </header>
         <main class="content" id="content">${content}</main>

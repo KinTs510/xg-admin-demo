@@ -83,7 +83,7 @@ route('/onboarding/verification', {
       <div class="bar">${typeTabs('obVer', all)}</div>
       ${table(['Application Date / Time', 'Type', 'Reference ID', 'Business Name', 'Supplier Name', 'Compliance Report', ''], pg.rows.map((c) => {
         const i = caseInfo(c);
-        return [mono(c.appDate), typePill(c.type), mono(c.ref), esc(i.business), esc(i.contact), `${st(reportSt(c))} <span class="muted" style="font-size:12px;margin-left:6px">${ST_TEXT[reportSt(c)]}</span>`,
+        return [mono(c.appDate), typePill(c.type), mono(c.ref), esc(i.business), esc(i.contact), st(reportSt(c)),
           viewBtn(!c.pending && c.reportStatus === 'none', `verifyModal('${c.ref}')`, 'Verification')];
       }), { pager: pager('obVer', pg), align: ['', '', '', '', '', '', 'r'] })}
       ${legend()}`;
@@ -128,7 +128,7 @@ route('/onboarding/decision', {
       ${table(['Application Date / Time', 'Type', 'Reference ID', 'Business Name', 'Supplier Name', 'Compliance Report', ''], pg.rows.map((c) => {
         const i = caseInfo(c);
         const s = c.decisionPending ? 'pend' : reportSt(c);
-        return [mono(c.appDate), typePill(c.type), mono(c.ref), esc(i.business), esc(i.contact), `${st(s)} <span class="muted" style="font-size:12px;margin-left:6px">${c.decisionPending ? 'Decision pending approval' : ST_TEXT[s]}</span>`,
+        return [mono(c.appDate), typePill(c.type), mono(c.ref), esc(i.business), esc(i.contact), st(s),
           viewBtn(c.reportStatus === 'done' && !c.pending, `decisionModal('${c.ref}')`, 'KYC / KYB Decision')];
       }), { pager: pager('obDec', pg), align: ['', '', '', '', '', '', 'r'] })}
       ${legend()}`;

@@ -168,8 +168,8 @@ function popMenu(anchor, items, opts = {}) {
   m.dataset.temp = '1';
   m.style.position = 'fixed';
   m.style.top = r.bottom + 6 + 'px';
-  m.style.left = Math.max(8, (opts.alignRight ? r.right - 170 : r.left)) + 'px';
-  m.innerHTML = items.map((it, i) => `<button data-i="${i}" class="${it.danger ? 'dan' : ''} ${it.on ? 'on' : ''}">${it.icon ? ic(it.icon, 14) : ''}<span style="flex:1">${esc(it.label)}</span>${it.on ? ic('check', 14) : ''}</button>`).join('');
+  m.style.left = Math.max(8, (opts.alignRight ? r.right - 190 : r.left)) + 'px';
+  m.innerHTML = items.map((it, i) => `<button data-i="${i}" class="${it.danger ? 'dan' : ''} ${it.on ? 'on' : ''}"><span style="flex:1">${esc(it.label)}</span>${it.on ? ic('check', 14) : ''}</button>`).join('');
   m.querySelectorAll('button').forEach((b) => (b.onclick = () => { closeMenus(); items[+b.dataset.i].run(); }));
   document.body.appendChild(m);
 }
@@ -231,9 +231,15 @@ function runAction(action) {
 /* ------------------------------------------------------------------ small UI builders */
 const pill = (t, k = 'n') => `<span class="pill ${k}">${esc(t)}</span>`;
 const typePill = (t) => pill(t, t === 'KYC' ? 'info' : t === 'HKGX KYB' ? 'gold' : 'n');
-const ST_ICON = { done: 'check', pend: 'clock', wait: 'ellipsis', none: 'minus', fail: 'x' };
-const ST_TEXT = { done: 'Done', pend: 'Pending approval', wait: 'Waiting', none: 'Not started', fail: 'Rejected / failed' };
-const st = (k) => `<span class="st ${k}" title="${ST_TEXT[k]}">${ic(ST_ICON[k], 13)}</span>`;
+/* list status set (design v2.3.1): Done / Not done / Rejected only. Pending and waiting steps show as Not done. */
+const ST_TEXT = { done: 'Done', none: 'Not done', fail: 'Rejected / failed' };
+const stKey = (k) => (k === 'pend' || k === 'wait' ? 'none' : k);
+const ST_SVG = {
+  done: '<circle cx="12" cy="12" r="10.6" fill="#DCFAE6" stroke="#17B26A" stroke-width="1.4"/><path d="M7.6 12.3l3 3 5.9-6.2" fill="none" stroke="#079455" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+  none: '<circle cx="12" cy="12" r="10.6" fill="#FFFFFF" stroke="#6B6B6B" stroke-width="1.4"/><path d="M7.8 12h8.4" stroke="#6B6B6B" stroke-width="1.5" stroke-linecap="round"/>',
+  fail: '<circle cx="12" cy="12" r="10.6" fill="#FEE4E2" stroke="#F04438" stroke-width="1.4"/><path d="M9.2 9.2l5.6 5.6M14.8 9.2l-5.6 5.6" stroke="#D92D20" stroke-width="1.6" stroke-linecap="round"/>',
+};
+const st = (k) => { const s = stKey(k); return `<span class="st" title="${k === 'pend' ? 'Pending approval' : ST_TEXT[s]}"><svg width="26" height="26" viewBox="0 0 24 24">${ST_SVG[s]}</svg></span>`; };
 const legend = () => `<div class="legend">${Object.keys(ST_TEXT).map((k) => `<span>${st(k)}${ST_TEXT[k]}</span>`).join('')}</div>`;
 const mono = (t) => `<span class="mono">${esc(t)}</span>`;
 const two = (a, b, m = false) => `<div class="two ${m ? 'mono' : ''}"><b>${esc(a)}</b><small>${esc(b)}</small></div>`;
@@ -340,10 +346,9 @@ function paged(key, rows, size = 10) {
   return { rows: rows.slice((p - 1) * size, p * size), p, pages, total: rows.length, size };
 }
 function pager(key, pg) {
-  const from = pg.total ? (pg.p - 1) * pg.size + 1 : 0;
-  const to = Math.min(pg.total, pg.p * pg.size);
+  if (!pg.total) return '';
   const nums = Array.from({ length: pg.pages }, (_, i) => i + 1);
-  return `<div class="pager"><span>Showing ${from}–${to} of ${pg.total}</span><div class="pg">
+  return `<div class="pager"><div class="pg">
     <button ${pg.p <= 1 ? 'disabled' : ''} onclick="Paging['${key}']=${pg.p - 1};refresh()">‹</button>
     ${nums.map((n) => `<button class="${n === pg.p ? 'on' : ''}" onclick="Paging['${key}']=${n};refresh()">${n}</button>`).join('')}
     <button ${pg.p >= pg.pages ? 'disabled' : ''} onclick="Paging['${key}']=${pg.p + 1};refresh()">›</button></div></div>`;
@@ -354,14 +359,15 @@ function table(head, rows, o = {}) {
     const click = !Array.isArray(r) && r.onclick ? ` class="click" onclick="${r.onclick}"` : '';
     return `<tr${click}>${cells.map((c, i) => `<td class="${(o.align || [])[i] || ''}">${c ?? ''}</td>`).join('')}</tr>`;
   }).join('') : `<tr><td colspan="${head.length}" style="height:auto"><div class="empty">${o.empty || 'No records to display'}</div></td></tr>`;
-  return `<div class="tbl ${o.compact ? 'compact' : ''}"><table><thead><tr>${head.map((h, i) => `<th class="${(o.align || [])[i] || ''}">${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>${o.pager || ''}</div>`;
+  if (!o.noAction && head.length && head[head.length - 1] === '') head = [...head.slice(0, -1), 'Action'];
+  return `<div class="tbl ${o.compact ? 'compact flat' : ''}"><table><thead><tr>${head.map((h, i) => `<th class="${(o.align || [])[i] || ''}">${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>${o.pager || ''}</div>`;
 }
 
 /* tabs bound to a UI state key */
 const UI = {};   // transient UI state (tabs, filters, edit modes)
-function tabs(key, list, onchange = 'refresh()') {
+function tabs(key, list, onchange = 'refresh()', variant = '') {
   const cur = UI[key] ?? list[0][0];
-  return `<div class="tabs">${list.map(([v, label, n]) => `<button class="${v === cur ? 'on' : ''}" onclick="UI['${key}']='${v}';Paging['${key}']=1;${onchange}">${esc(label)}${n != null ? `<span class="cnt">${n}</span>` : ''}</button>`).join('')}</div>`;
+  return `<div class="tabs ${variant}">${list.map(([v, label, n]) => `<button class="${v === cur ? 'on' : ''}" onclick="UI['${key}']='${v}';Paging['${key}']=1;${onchange}">${esc(label)}${n != null ? `<span class="cnt">${n}</span>` : ''}</button>`).join('')}</div>`;
 }
 
 /* ------------------------------------------------------------------ idle timeout */

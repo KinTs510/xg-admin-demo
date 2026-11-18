@@ -8,8 +8,6 @@ route('/dashboard', {
   group: 'dashboard', title: 'Dashboard', crumb: ['Dashboard'],
   render: () => {
     const d = S(), db = d.dashboard, f = UI.dash;
-    const pendingAp = d.approvals.filter((a) => a.status === 'pending').length;
-    const pendingTx = d.txRequests.filter((t) => t.status === 'pending').length;
     const tabsDef = [['wallet', 'Wallet Transactions'], ['holders', 'Token Holders'], ['tokens', 'Wallet Tokens'], ['token', 'Token Transactions']];
     const inRange = (t) => {
       const day = t.slice(0, 10);
@@ -19,37 +17,33 @@ route('/dashboard', {
     if (f.tab === 'wallet' || f.tab === 'token') {
       const src = (f.tab === 'wallet' ? db.walletTx : db.tokenTx).filter((t) => (!f.method || t.method === f.method) && inRange(t.time));
       head = ['TX hash', 'Method', 'Value', 'Send', 'Receive', 'Timestamp'];
-      rows = src.map((t) => [`<span class="mono" title="${t.hash}">${shortHash(t.hash)}</span>`, pill(t.method, t.method === 'Mint' ? 'ok' : t.method === 'Burn' ? 'dan' : t.method === 'Transfer' ? 'info' : 'n'),
-        typeof t.value === 'number' ? `${fmtInt(t.value)} XGZ` : esc(t.value), mono(t.from), mono(t.to), mono(t.time)]);
+      const lnk = (t) => `<span class="lnk" style="text-decoration:none">${esc(t)}</span>`;
+      rows = src.map((t) => [`<span class="lnk" style="text-decoration:none" title="${t.hash}">${shortHash(t.hash)}</span>`, esc(t.method),
+        typeof t.value === 'number' ? `${fmtInt(t.value)} XGZ` : esc(t.value), lnk(t.from), lnk(t.to), esc(t.time.replace(/-/g, '/'))]);
       csv = [head, ...src.map((t) => [t.hash, t.method, t.value, t.from, t.to, t.time])];
     } else if (f.tab === 'holders') {
       head = ['Rank', 'Address', 'Quantity (XGZ)', 'Percentage', 'Value (USD)'];
-      rows = db.tokenHolders.map((h) => [mono('#' + h.rank), mono(h.address), mono(fmtN(h.qty, 3)), `<div style="display:flex;align-items:center;gap:10px"><div style="width:90px;height:6px;border-radius:3px;background:var(--g)"><div style="width:${Math.min(100, h.pct * 2.5)}%;height:6px;border-radius:3px;background:var(--gold-hi)"></div></div>${h.pct.toFixed(2)}%</div>`, mono('$' + fmtN(h.usd))]);
+      rows = db.tokenHolders.map((h) => [esc(h.rank), `<span class="lnk" style="text-decoration:none">${esc(h.address)}</span>`, fmtN(h.qty, 4), h.pct.toFixed(2) + '%', '$' + fmtN(h.usd)]);
       csv = [head, ...db.tokenHolders.map((h) => [h.rank, h.address, h.qty, h.pct.toFixed(4), h.usd.toFixed(2)])];
     } else {
       head = ['Token', 'Contract Address', 'Balance', 'Value (USD)'];
-      rows = db.walletTokens.map((t) => [`<b>${esc(t.token)}</b>`, mono(t.contract), mono(t.balance), mono('$' + fmtN(t.usd))]);
+      rows = db.walletTokens.map((t) => [esc(t.token), t.contract === 'Native' ? '—' : `<span class="lnk" style="text-decoration:none">${esc(t.contract)}</span>`, esc(t.balance), '$' + fmtN(t.usd)]);
       csv = [head, ...db.walletTokens.map((t) => [t.token, t.contract, t.balance, t.usd])];
     }
     UI.dashCsv = csv;
     const showFilter = f.tab === 'wallet' || f.tab === 'token';
-    const methods = f.tab === 'token' ? ['Mint', 'Transfer', 'Burn'] : ['Transfer', 'Approve', 'Execute'];
     const pg = paged('dash-' + f.tab, rows);
-    return `${pageHead(`${ic('house', 24)}Dashboard`, 'Platform overview')}
-      <div class="kpis">
-        <div class="kpi"><span>XGZ in circulation</span><b>${fmtInt(db.circ)}</b><small>1 XGZ = 1 g gold</small></div>
-        <div class="kpi"><span>Token holders</span><b>${db.tokenHolders.length}</b><small>Non-zero balances</small></div>
-        <div class="kpi"><span>Pending approvals</span><b>${pendingAp}</b><small><a href="#/approvals">Open Approvals</a></small></div>
-        <div class="kpi"><span>Transaction requests</span><b>${pendingTx}</b><small><a href="#/transactions">Waiting for signers</a></small></div>
-      </div>
-      <div class="bar" style="justify-content:space-between">
-        <div class="seg">${tabsDef.map(([k, l]) => `<button class="${f.tab === k ? 'on' : ''}" onclick="UI.dash.tab='${k}';UI.dash.method='';refresh()">${l}</button>`).join('')}</div>
-        <div class="bar">
-          ${showFilter ? `<button class="btn sec sm" data-menu onclick="dashFilter(this)">${ic('list-filter', 14)}Filter${f.method || f.from || f.to ? ' · on' : ''}</button>` : ''}
-          <button class="btn sec sm" ${rows.length ? 'onclick="exportDashCsv()"' : 'disabled'}>${ic('download', 14)}Export to CSV</button></div>
-      </div>
-      ${table(head, pg.rows, { pager: rows.length ? pager('dash-' + f.tab, pg) : '' })}
-      ${showFilter ? demoInline(`Set a filter that matches nothing (for example method + a future date) to see the empty state: “No records to display” and a disabled Export.`) : ''}`;
+    const tabLabel = tabsDef.find(([k]) => k === f.tab)[1];
+    return `<div class="dash-head">${ic('house', 32)}<h1>Dashboard</h1></div>
+      <div style="height:12px"></div>
+      <div class="seg lg">${tabsDef.map(([k, l]) => `<button class="${f.tab === k ? 'on' : ''}" onclick="UI.dash.tab='${k}';UI.dash.method='';refresh()">${l}</button>`).join('')}</div>
+      <div class="dash-body">
+        <div class="dh2"><h2>${tabLabel}</h2><div class="bar" style="gap:14px">
+          ${showFilter ? `<button class="btn outline" onclick="dashFilter(this)">Filter${f.method || f.from || f.to ? ' · on' : ''}${ic('chevron-down', 18, 'margin-left:22px;opacity:.7')}</button>` : ''}
+          <button class="btn sec" ${rows.length ? 'onclick="exportDashCsv()"' : 'disabled'}>${ic('download', 18)}Export to CSV</button></div></div>
+        ${table(head, pg.rows, { pager: rows.length ? pager('dash-' + f.tab, pg) : '' })}
+        ${showFilter ? demoInline(`Set a filter that matches nothing (for example a future date) to see the empty state: “No records to display” and a disabled Export.`) : ''}
+      </div>`;
   },
 });
 function dashFilter(el) {

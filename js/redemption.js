@@ -31,17 +31,18 @@ const roHeadCells = ['Applied Date', 'Business / Contact Name', 'Request By', 'R
 const roCells = (o) => [mono(o.applied), two(roName(o), roCo(o).contact), esc(o.requestBy), two(o.id, o.cref, true)];
 
 /* ---------------- shared cards ---------------- */
+const txLink = (h) => (h ? `<span class="lnk">${esc(h)}</span>` : '---');
 function escrowCard(o) {
   const released = !!o.releaseTx, returned = !!o.cancelTx;
   const stp = !o.deposit ? pill('Awaiting client deposit', 'warn') : released ? pill('Released', 'ok') : returned ? pill('Returned to client', 'n') : pill('Held in escrow', 'info');
   return card('XGZ Escrow Deposit', kv([['Escrow Contract', o.escrow, { mono: true }], ['Expected Amount', xgz(o.grams), { mono: true }], ['From (client wallet)', roCo(o).walletShort, { mono: true }],
-    ['Deposited', o.deposit ? xgz(o.grams) : '---', { mono: true }], ['Deposit tx', o.deposit?.tx || '---', { mono: true }], ['Deposited at (UTC+8)', o.deposit?.at || '---', { mono: true }],
-    ['Release Funds tx', o.releaseTx || '---', { mono: true }], ['Cancel tx', o.cancelTx || '---', { mono: true }]], 3), { right: stp });
+    ['Deposited', o.deposit ? xgz(o.grams) : '---', { mono: true }], ['Deposit tx', txLink(o.deposit?.tx), { html: true }], ['Deposited at (UTC+8)', o.deposit?.at || '---', { mono: true }],
+    ['Release Funds tx', txLink(o.releaseTx), { html: true }], ['Cancel tx', txLink(o.cancelTx), { html: true }]], 3), { right: stp });
 }
 function logisticsCardRo(o) {
   return card('Redemption Logistics', `${kv([['Pick-Up Location', o.location], ['Collection Date', o.collection, { mono: true }], ['Method of Redemption', o.method], ['Pick-Up Time (Preferred Time)', o.slot, { mono: true }]], 4)}
     <div class="hr"></div>${subh('Authorised Person for Collection')}${kv([['Name', o.person.name], ['ID/Passport No.', o.person.id, { mono: true }], ['Phone Number', o.person.phone, { mono: true }], ['Relationship to company', o.person.rel]], 4)}`,
-  { right: pill(o.stage === 'escrow' ? `Collection ${o.collection} · ${o.slot}` : 'Set by client at order creation', 'n') });
+  { right: pill(o.stage === 'escrow' ? `Collection ${o.collection} · ${o.slot}` : 'Set by client at order creation', o.stage === 'escrow' ? 'info' : 'n') });
 }
 function summaryCard(o, withRetrieved = true) {
   const it = o.items[0];
@@ -278,8 +279,8 @@ route('/redemption/escrow/:id', {
     else if (o.phase === 'grace') {
       action = card('Order Timer (Grace Period)', `<div class="timer" id="ro-timer" data-to="${o.timerTo}">${timerHtml(o.timerTo)}</div>
         <div class="hint">The client can change the collection date or cancel up to 72 hours before the collection date/time. After that the Lock Period starts.</div>
-        <div><button class="btn dan" onclick="roEnd('${id}','cancel')">Cancel Order</button></div>
-        ${demoInline(`<button class="demo-btn" onclick="roPhase('${id}','cancelreq')">Client requests cancellation</button><button class="demo-btn" onclick="roPhase('${id}','lock')">Jump to Lock Period (72 h before)</button>`)}`);
+        <button class="btn dan full" onclick="roEnd('${id}','cancel')">Cancel Order</button>
+        ${demoInline(`<button class="demo-btn" onclick="roPhase('${id}','cancelreq')">Client requests cancellation</button><button class="demo-btn" onclick="roPhase('${id}','lock')">Jump to Lock Period (72 h before)</button>`)}`, { right: ic('timer', 18, 'opacity:.6') });
     } else if (o.phase === 'cancelreq') {
       action = card('Order Cancellation Request', `<div class="cd" style="margin-top:0">The client of <b class="mono">${esc(id)}</b> has requested to cancel. Accepting returns the escrowed XGZ; the redemption fee is not refunded.</div>
         <div style="display:flex;gap:10px"><button class="btn pri" onclick="roEnd('${id}','accept')">Accept Request</button><button class="btn sec" onclick="denyCancel('${id}')">Deny Request</button></div>`);
@@ -287,7 +288,7 @@ route('/redemption/escrow/:id', {
       action = card('Order Timer (Lock Period)', `<div class="timer" id="ro-timer" data-to="${o.timerTo}">${timerHtml(o.timerTo)}</div>
         <div class="hint">The Lock Period started 72 h before collection. The collection date can no longer be changed. Upload Receipt opens on the collection day.</div>
         ${banner('info', `Waiting for collection day · ${esc(o.collection)}`)}
-        ${demoInline(`<button class="demo-btn" onclick="roPhase('${id}','collect')">Collection day arrives</button>`)}`);
+        ${demoInline(`<button class="demo-btn" onclick="roPhase('${id}','collect')">Collection day arrives</button>`)}`, { right: ic('timer', 18, 'opacity:.6') });
     } else if (o.phase === 'collect') action = receiptForm(o);
     else if (o.phase === 'confirm') {
       top = card('Release Funds', `<div class="cd" style="margin-top:0">Receipt uploaded and gold collected. Release the escrowed ${xgz(o.grams)} to GoldZip for burning.</div><div><button class="btn pri" onclick="releaseFunds('${id}')">Release Funds</button></div>`);

@@ -20,8 +20,7 @@ function setPending(p) { Auth.pending = p; try { p ? sessionStorage.setItem('gz-
 
 const authLayout = (inner) => `
   <div class="auth">
-    <div class="auth-art"><img class="splash" src="assets/auth-splash.jpg" alt="">
-      <div class="brand"><img src="assets/goldzip-logo.png" alt="GoldZip 數碼黃金"><span>Admin Console</span></div></div>
+    <div class="auth-art"><div class="pat"></div><img class="logo" src="assets/goldzip-logo.png" alt="GoldZip 數碼黃金"></div>
     <div class="auth-main"><div class="auth-box">${inner}</div>
       <div class="auth-foot"><span>Any problems, please contact <a href="mailto:service@goldzip.io">service team</a></span><span class="ver">Version ${VERSION}</span></div></div>
   </div>`;
@@ -38,7 +37,7 @@ route('/login', {
       <form id="login-form" onsubmit="event.preventDefault();doLogin()" style="display:flex;flex-direction:column;gap:16px" novalidate>
         <div class="field ${e.email ? 'err' : ''}"><label for="li-email">User ID</label>
           <div class="input"><input id="li-email" type="email" placeholder="Email address" value="${esc(f.email || '')}" autocomplete="username"></div>${errLine(e.email)}</div>
-        <div class="field ${e.password ? 'err' : ''}"><label for="li-pwd"><span>Password</span><a href="#/forgot-password" style="font-size:12px">Forgot Password</a></label>
+        <div class="field ${e.password ? 'err' : ''}"><label for="li-pwd"><span>Password</span><a href="#/forgot-password" class="ulink">Forgot Password</a></label>
           <div class="input"><input id="li-pwd" type="${Auth.pwdShown ? 'text' : 'password'}" placeholder="Password" value="${esc(f.password || '')}" autocomplete="current-password">
             <button type="button" class="eye" onclick="togglePwd('li-pwd')" aria-label="Show password">${ic(Auth.pwdShown ? 'eye-off' : 'eye', 16)}</button></div>${errLine(e.password)}</div>
         <button class="btn pri full" type="submit">Login</button>
